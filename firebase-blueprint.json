@@ -1,0 +1,65 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with role and download stats",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["developer", "user"] },
+        "totalDownloads": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "lastActive": { "type": "string" }
+      },
+      "required": ["uid", "role"]
+    },
+    "DownloadRecord": {
+      "title": "DownloadRecord",
+      "description": "Record of an asset downloaded by the user",
+      "type": "object",
+      "properties": {
+        "downloadId": { "type": "string" },
+        "userId": { "type": "string" },
+        "assetId": { "type": "string" },
+        "title": { "type": "string" },
+        "provider": { "type": "string" },
+        "assetType": { "type": "string" },
+        "fileType": { "type": "string" },
+        "downloadUrl": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["downloadId", "userId", "assetId", "title", "downloadUrl", "timestamp"]
+    },
+    "TrafficEvent": {
+      "title": "TrafficEvent",
+      "description": "Real-time system telemetry and search/download traffic event",
+      "type": "object",
+      "properties": {
+        "eventId": { "type": "string" },
+        "userId": { "type": "string" },
+        "eventType": { "type": "string", "enum": ["search", "download", "filter", "visit"] },
+        "query": { "type": "string" },
+        "mediaType": { "type": "string" },
+        "provider": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["eventId", "eventType", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Stores user profiles and aggregate download counters"
+    },
+    "/users/{userId}/downloads/{downloadId}": {
+      "schema": "DownloadRecord",
+      "description": "Subcollection of downloaded assets per user for past history"
+    },
+    "/system_traffic/{eventId}": {
+      "schema": "TrafficEvent",
+      "description": "Realtime traffic events visible in the Developer Operator Admin Panel"
+    }
+  }
+}

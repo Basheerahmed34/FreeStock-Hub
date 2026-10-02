@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDeveloper() {
+      return isAuthenticated() && (
+        request.auth.token.email == 'mohsinjutt5855@gmail.com' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'developer')
+      );
+    }
+
+    // Allow user data access for both Firebase Auth and resilient session profiles
+    match /users/{userId} {
+      allow read, write: if true;
+
+      match /downloads/{downloadId} {
+        allow read, write: if true;
+      }
+    }
+
+    // Allow system traffic telemetry for live Operator Admin panel
+    match /system_traffic/{eventId} {
+      allow read, write: if true;
+    }
+  }
+}

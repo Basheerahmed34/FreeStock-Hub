@@ -1,0 +1,6 @@
+{
+  "name": "FreeStock Hub",
+  "description": "Unified search engine for free and openly licensed creative media including photos, videos, audio, vectors, icons, transparent PNGs, and GIFs.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
