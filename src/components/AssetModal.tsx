@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UnifiedAsset, AssetType, LicenseType } from '../types/unified-asset.js';
 import { generateAttributions } from '../lib/attribution.js';
 import { downloadAssetDirectly } from '../lib/download-helper.js';
@@ -14,7 +14,8 @@ import {
   Code,
   FileText,
   Sparkles,
-  ArrowDownToLine
+  ArrowDownToLine,
+  Video
 } from 'lucide-react';
 
 interface AssetModalProps {
@@ -38,6 +39,19 @@ export const AssetModal: React.FC<AssetModalProps> = ({
   const [rawSvg, setRawSvg] = useState<string>('');
 
   const attributions = generateAttributions(asset);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
 
   const isVideo = asset.asset_type === AssetType.VIDEO;
   const isAudio = asset.asset_type === AssetType.AUDIO || asset.asset_type === AssetType.SOUND_EFFECT;
@@ -81,33 +95,34 @@ export const AssetModal: React.FC<AssetModalProps> = ({
   const isLicenseAmbiguous = asset.license_name === LicenseType.CHECK_LICENSE;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-6 overflow-y-auto bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-150">
       <div
-        className="relative w-full max-w-4xl rounded-3xl border border-slate-800 bg-[#0a0e1c] shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
+        className="relative w-full max-w-4xl rounded-2xl sm:rounded-3xl border border-slate-800 bg-[#0a0e1c] shadow-2xl overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Bar with Gen Z accent */}
-        <div className="flex items-center justify-between border-b border-slate-800/80 px-6 py-4 bg-slate-950/40">
-          <div className="flex items-center gap-3">
-            <h2 className="text-base font-semibold text-white truncate max-w-md sm:max-w-xl">
+        <div className="flex items-center justify-between border-b border-slate-800/80 px-4 sm:px-6 py-3 sm:py-4 bg-slate-950/40">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 mr-2">
+            <h2 className="text-sm sm:text-base font-semibold text-white truncate">
               {asset.title}
             </h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={() => onToggleSave(asset)}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 isSaved
                   ? 'bg-lime-400 text-slate-950 shadow-[0_0_12px_rgba(163,230,53,0.35)]'
                   : 'bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800'
               }`}
             >
               <Bookmark className={`h-3.5 w-3.5 ${isSaved ? 'fill-current' : ''}`} />
-              <span>{isSaved ? 'Saved' : 'Save'}</span>
+              <span className="hidden xs:inline">{isSaved ? 'Saved' : 'Save'}</span>
             </button>
             <button
               onClick={onClose}
               className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+              aria-label="Close modal"
             >
               <X className="h-5 w-5" />
             </button>
@@ -115,36 +130,53 @@ export const AssetModal: React.FC<AssetModalProps> = ({
         </div>
 
         {/* Modal Scrollable Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 sm:space-y-6">
           {/* Media Viewport */}
           <div className="relative rounded-2xl overflow-hidden bg-black border border-slate-800 flex items-center justify-center min-h-[260px] max-h-[480px]">
             {isVideo ? (
-              <video
-                src={asset.preview_url}
-                controls
-                autoPlay
-                className="max-h-[460px] w-full object-contain"
-              />
+              asset.preview_url?.trim() ? (
+                <video
+                  src={asset.preview_url.trim()}
+                  controls
+                  autoPlay
+                  preload="metadata"
+                  playsInline
+                  className="max-h-[460px] w-full object-contain"
+                />
+              ) : (
+                <div className="p-8 text-center text-slate-400">
+                  <Video className="h-10 w-10 mx-auto text-slate-600 mb-2" />
+                  <p className="text-xs">Video stream preview unavailable</p>
+                </div>
+              )
             ) : isAudio ? (
               <div className="w-full p-8 flex flex-col items-center justify-center space-y-4">
                 <div className="h-16 w-16 rounded-full bg-lime-400/10 text-lime-400 border border-lime-400/20 flex items-center justify-center">
                   <Sparkles className="h-8 w-8" />
                 </div>
                 <h3 className="text-white font-medium text-center">{asset.title}</h3>
-                <audio
-                  src={asset.preview_url}
-                  controls
-                  autoPlay
-                  className="w-full max-w-md accent-lime-400"
-                />
+                {asset.preview_url?.trim() ? (
+                  <audio
+                    src={asset.preview_url.trim()}
+                    controls
+                    autoPlay
+                    className="w-full max-w-md accent-lime-400"
+                  />
+                ) : (
+                  <p className="text-xs text-slate-400">Audio playback stream unavailable</p>
+                )}
               </div>
             ) : isIcon || isVector ? (
               <div className="w-full p-12 flex flex-col items-center justify-center bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px]">
-                <img
-                  src={asset.preview_url}
-                  alt={asset.title}
-                  className="max-h-56 max-w-56 object-contain filter invert contrast-200"
-                />
+                {(asset.preview_url?.trim() || asset.thumbnail_url?.trim()) ? (
+                  <img
+                    src={asset.preview_url?.trim() || asset.thumbnail_url?.trim() || undefined}
+                    alt={asset.title}
+                    className="max-h-56 max-w-56 object-contain filter invert contrast-200"
+                  />
+                ) : (
+                  <Sparkles className="h-16 w-16 text-slate-600" />
+                )}
                 <button
                   onClick={handleViewSvg}
                   className="mt-6 flex items-center gap-1.5 text-xs text-lime-400 hover:text-lime-300 font-semibold cursor-pointer"
@@ -154,12 +186,19 @@ export const AssetModal: React.FC<AssetModalProps> = ({
                 </button>
               </div>
             ) : (
-              <img
-                src={asset.preview_url || asset.thumbnail_url}
-                alt={asset.title}
-                referrerPolicy="no-referrer"
-                className="max-h-[460px] w-full object-contain"
-              />
+              (asset.preview_url?.trim() || asset.thumbnail_url?.trim()) ? (
+                <img
+                  src={asset.preview_url?.trim() || asset.thumbnail_url?.trim() || undefined}
+                  alt={asset.title}
+                  referrerPolicy="no-referrer"
+                  className="max-h-[460px] w-full object-contain"
+                />
+              ) : (
+                <div className="p-8 text-center text-slate-400">
+                  <FileText className="h-10 w-10 mx-auto text-slate-600 mb-2" />
+                  <p className="text-xs">Image preview unavailable</p>
+                </div>
+              )
             )}
           </div>
 

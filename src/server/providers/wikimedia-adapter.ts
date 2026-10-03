@@ -15,7 +15,9 @@ export class WikimediaCommonsAdapter implements BaseProviderAdapter {
     const t0 = Date.now();
     const query = options.query || 'nature';
     const limit = Math.min(options.perPage || 24, 35);
-    const endpoint = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrnamespace=6&gsrlimit=${limit}&prop=imageinfo&iiprop=url|size|extmetadata|mime&format=json&origin=*`;
+    const page = options.page || 1;
+    const offset = (page - 1) * limit;
+    const endpoint = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrnamespace=6&gsrlimit=${limit}&gsroffset=${offset}&prop=imageinfo&iiprop=url|size|extmetadata|mime&format=json&origin=*`;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 6000);

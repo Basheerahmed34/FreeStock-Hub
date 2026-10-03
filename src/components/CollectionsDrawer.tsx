@@ -165,27 +165,28 @@ export const CollectionsDrawer: React.FC<CollectionsDrawerProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/75 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="absolute inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10">
-        <div className="w-screen max-w-lg border-l border-slate-800 bg-slate-900 text-slate-100 shadow-2xl flex flex-col">
+      <div className="absolute inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10 w-full sm:w-auto">
+        <div className="w-full sm:w-screen sm:max-w-lg border-l border-slate-800 bg-slate-900 text-slate-100 shadow-2xl flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
-            <div className="flex items-center gap-2.5">
-              <Bookmark className="h-4 w-4 text-cyan-400 fill-current" />
-              <h2 className="text-sm font-semibold text-white">Curation History & Collections</h2>
-              <span className="font-mono text-xs text-slate-400">
+          <div className="flex items-center justify-between border-b border-slate-800 px-4 sm:px-5 py-3.5 sm:py-4">
+            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 mr-2">
+              <Bookmark className="h-4 w-4 text-cyan-400 fill-current flex-shrink-0" />
+              <h2 className="text-xs sm:text-sm font-semibold text-white truncate">Curation History & Collections</h2>
+              <span className="font-mono text-xs text-slate-400 flex-shrink-0">
                 ({savedAssets.length})
               </span>
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+              className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors flex-shrink-0"
+              aria-label="Close collections drawer"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex border-b border-slate-800 bg-slate-950/60 px-4 text-xs font-medium">
+          <div className="flex border-b border-slate-800 bg-slate-950/60 px-2 sm:px-4 text-xs font-medium overflow-x-auto scrollbar-none whitespace-nowrap">
             <button
               onClick={() => setActiveTab('assets')}
               className={`px-3 py-2.5 border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${
@@ -276,12 +277,18 @@ export const CollectionsDrawer: React.FC<CollectionsDrawerProps> = ({
                       onClick={() => onSelectAsset(asset)}
                       className="group flex items-center gap-3 rounded-xl border border-slate-800/80 bg-slate-950/80 p-3 hover:border-slate-700 transition-colors cursor-pointer"
                     >
-                      <img
-                        src={asset.thumbnail_url}
-                        alt={asset.title}
-                        referrerPolicy="no-referrer"
-                        className="h-14 w-14 rounded-lg object-cover flex-shrink-0 bg-slate-900 border border-slate-800"
-                      />
+                      {asset.thumbnail_url?.trim() ? (
+                        <img
+                          src={asset.thumbnail_url.trim()}
+                          alt={asset.title}
+                          referrerPolicy="no-referrer"
+                          className="h-14 w-14 rounded-lg object-cover flex-shrink-0 bg-slate-900 border border-slate-800"
+                        />
+                      ) : (
+                        <div className="h-14 w-14 rounded-lg flex items-center justify-center flex-shrink-0 bg-slate-900 border border-slate-800 text-slate-500">
+                          <Bookmark className="h-5 w-5 text-lime-400" />
+                        </div>
+                      )}
                       <div className="flex-1 min-w-0">
                         <h4 className="text-xs font-semibold text-white truncate group-hover:text-cyan-400 transition-colors">
                           {asset.title}

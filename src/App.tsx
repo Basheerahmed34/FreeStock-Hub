@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { AssetType, LicenseType, UnifiedAsset, SearchResponse } from './types/unified-asset.js';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { AssetType, LicenseType, UnifiedAsset, SearchResponse, ProviderDebugInfo } from './types/unified-asset.js';
 import { Header } from './components/Header.js';
 import { HeroSection } from './components/HeroSection.js';
 import { SearchBar } from './components/SearchBar.js';
@@ -14,6 +14,8 @@ import { AudioPlayerBar } from './components/AudioPlayerBar.js';
 import { AuthModal } from './components/AuthModal.js';
 import { UserDownloadHistoryModal } from './components/UserDownloadHistoryModal.js';
 import { OperatorAdminPanelModal } from './components/OperatorAdminPanelModal.js';
+import { SearchDebugPanel } from './components/SearchDebugPanel.js';
+import { Footer } from './components/Footer.js';
 
 import {
   auth,
@@ -45,6 +47,12 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [isDebugModalOpen, setIsDebugModalOpen] = useState(false);
+
+  // Live Multi-Provider Search Debug Telemetry (Requirement 18)
+  const [providersDebug, setProvidersDebug] = useState<ProviderDebugInfo[]>([]);
+  const [isSearchCached, setIsSearchCached] = useState(false);
+  const searchRequestIdRef = useRef(0);
 
   // Firebase Auth & Realtime Download State
   const [currentUser, setCurrentUser] = useState<AppUser | User | null>(() => getLocalSessionUser());
@@ -62,6 +70,7 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState(1);
   const [assets, setAssets] = useState<UnifiedAsset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [executionTimeMs, setExecutionTimeMs] = useState<number | undefined>(undefined);
@@ -168,11 +177,14 @@ export default function App() {
     handleUrlSharing();
   }, []);
 
-  // Multi-Provider Search
+  // Multi-Provider Search with Non-Blocking State & Request Cancellation (PRD Section 11 & 21)
   const executeSearch = useCallback(async () => {
+    const currentReqId = ++searchRequestIdRef.current;
     setIsLoading(true);
+    setSearchError(null);
     setCurrentPage(1);
     setHasMore(true);
+
     try {
       const params = new URLSearchParams();
       if (searchQuery.trim()) params.append('q', searchQuery.trim());
@@ -184,10 +196,18 @@ export default function App() {
       params.append('perPage', '32');
 
       const response = await fetch(`/api/search?${params.toString()}`);
-      if (!response.ok) throw new Error(`Search failed with status ${response.status}`);
+      if (!response.ok) throw new Error(`Search failed with HTTP status ${response.status}`);
       const data: SearchResponse = await response.json();
+
+      // Discard stale responses if a newer search was dispatched while this was in-flight
+      if (currentReqId !== searchRequestIdRef.current) return;
+
       setAssets(data.assets || []);
       setExecutionTimeMs(data.executionTimeMs);
+      setIsSearchCached(Boolean(data.cached));
+      if (data.providersDebug) {
+        setProvidersDebug(data.providersDebug);
+      }
       if (data.providersQueried) {
         setProvidersCount(data.providersQueried.length);
       }
@@ -203,9 +223,14 @@ export default function App() {
         userId: currentUser?.uid
       });
     } catch (err) {
-      console.error('Search query error:', err);
+      if (currentReqId === searchRequestIdRef.current) {
+        console.error('Search query error:', err);
+        setSearchError(err instanceof Error ? err.message : 'Unable to connect to media feeds. Please try again.');
+      }
     } finally {
-      setIsLoading(false);
+      if (currentReqId === searchRequestIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [searchQuery, selectedType, selectedProvider, selectedLicense, selectedSort, currentUser]);
 
@@ -213,15 +238,16 @@ export default function App() {
     executeSearch();
   }, [executeSearch]);
 
-  // High-Volume Pagination ("Load More Assets")
+  // High-Volume Pagination with Deduplication and Append Safety (PRD Section 6, 7 & 8)
   const handleLoadMore = async () => {
     if (isLoadingMore || !hasMore) return;
     setIsLoadingMore(true);
     const nextPage = currentPage + 1;
+    const currentQuerySnapshot = searchQuery.trim();
 
     try {
       const params = new URLSearchParams();
-      if (searchQuery.trim()) params.append('q', searchQuery.trim());
+      if (currentQuerySnapshot) params.append('q', currentQuerySnapshot);
       if (selectedType !== 'ALL') params.append('type', selectedType);
       if (selectedProvider !== 'ALL') params.append('provider', selectedProvider);
       if (selectedLicense !== 'ALL') params.append('license', selectedLicense);
@@ -233,19 +259,35 @@ export default function App() {
       if (!response.ok) throw new Error('Failed to load more assets');
       const data: SearchResponse = await response.json();
 
+      // Guard: Discard if query changed while pagination request was in-flight
+      if (searchQuery.trim() !== currentQuerySnapshot) return;
+
       const newItems = data.assets || [];
       if (newItems.length === 0) {
         setHasMore(false);
         showToast('All available assets loaded for this keyword!');
       } else {
-        const existingIds = new Set(assets.map(a => a.asset_id));
-        const filteredNew = newItems.filter(a => !existingIds.has(a.asset_id));
-        setAssets(prev => [...prev, ...filteredNew]);
+        let addedCount = 0;
+        setAssets((prev) => {
+          const existingIds = new Set(prev.map((a) => a.asset_id));
+          const uniqueNew = newItems.filter((a) => !existingIds.has(a.asset_id));
+          addedCount = uniqueNew.length;
+          if (uniqueNew.length === 0) {
+            setHasMore(false);
+          }
+          return [...prev, ...uniqueNew];
+        });
+
         setCurrentPage(nextPage);
-        showToast(`Loaded +${filteredNew.length} more assets from 11 providers!`);
+        if (addedCount > 0) {
+          showToast(`Loaded +${addedCount} more assets from 11 providers!`);
+        } else {
+          showToast('No further unique records found for this query.');
+        }
       }
     } catch (err) {
       console.error('Load more error:', err);
+      showToast('Could not load next page. Click to retry.');
     } finally {
       setIsLoadingMore(false);
     }
@@ -334,6 +376,7 @@ export default function App() {
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onOpenHistory={() => setIsHistoryModalOpen(true)}
         onOpenAdmin={() => setIsAdminPanelOpen(true)}
+        onOpenDebug={() => setIsDebugModalOpen(true)}
         currentUser={currentUser}
         userProfile={userProfile}
         downloadCount={totalDownloadsRecorded}
@@ -452,6 +495,8 @@ export default function App() {
           <AssetGrid
             assets={assets}
             isLoading={isLoading}
+            searchError={searchError}
+            onRetry={executeSearch}
             onSelectAsset={(asset) => setSelectedAsset(asset)}
             savedAssetIds={savedAssetIds}
             onToggleSave={handleToggleSave}
@@ -466,6 +511,12 @@ export default function App() {
           />
         </section>
       </main>
+
+      {/* Semantic Accessible Footer */}
+      <Footer
+        onNavClick={handleNavClick}
+        onOpenDebug={() => setIsDebugModalOpen(true)}
+      />
 
       {/* Modals & Overlays */}
       {selectedAsset && (
@@ -504,6 +555,16 @@ export default function App() {
         onClose={() => setIsAdminPanelOpen(false)}
         currentUserEmail={currentUser?.email || undefined}
         isDeveloperAuthenticated={isDevAuth}
+      />
+
+      {/* Live Search Engine Diagnostics & Telemetry Panel (PRD Section 18) */}
+      <SearchDebugPanel
+        isOpen={isDebugModalOpen}
+        onClose={() => setIsDebugModalOpen(false)}
+        debugInfo={providersDebug}
+        currentQuery={searchQuery}
+        executionTimeMs={executionTimeMs}
+        isCached={isSearchCached}
       />
 
       <CollectionsDrawer

@@ -14,7 +14,9 @@ export class IconifyAdapter implements BaseProviderAdapter {
     const t0 = Date.now();
     const query = options.query || 'arrow';
     const limit = Math.min(options.perPage || 30, 48);
-    const endpoint = `https://api.iconify.design/search?query=${encodeURIComponent(query)}&limit=${limit}`;
+    const page = options.page || 1;
+    const start = (page - 1) * limit;
+    const endpoint = `https://api.iconify.design/search?query=${encodeURIComponent(query)}&limit=${limit}&start=${start}`;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);

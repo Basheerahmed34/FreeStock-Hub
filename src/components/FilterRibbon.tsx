@@ -77,7 +77,7 @@ export const FilterRibbon: React.FC<FilterRibbonProps> = ({
   return (
     <div className="w-full space-y-3.5">
       {/* Primary Media Segregation Tabs (Visual Photos & Videos First) */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none -mx-3 px-3 sm:mx-0 sm:px-0">
         {TYPE_TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = selectedType === tab.value;
@@ -85,13 +85,13 @@ export const FilterRibbon: React.FC<FilterRibbonProps> = ({
             <button
               key={tab.value}
               onClick={() => onSelectType(tab.value)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-xl whitespace-nowrap transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-3.5 sm:px-4 py-2.5 text-xs font-semibold rounded-xl whitespace-nowrap transition-all cursor-pointer min-h-[40px] ${
                 isActive
                   ? 'bg-slate-900 text-lime-400 border border-lime-400/60 shadow-[0_0_15px_rgba(163,230,53,0.18)] scale-[1.02]'
                   : 'text-slate-400 hover:text-white hover:bg-slate-900/80 border border-transparent'
               }`}
             >
-              <Icon className={`h-4 w-4 ${isActive ? 'text-lime-400' : 'text-slate-500'}`} />
+              <Icon className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-lime-400' : 'text-slate-500'}`} />
               <span>{tab.label}</span>
               {tab.badge && !isActive && (
                 <span className="text-[10px] text-lime-400/80 font-mono">
@@ -104,15 +104,15 @@ export const FilterRibbon: React.FC<FilterRibbonProps> = ({
       </div>
 
       {/* Secondary Controls (Provider, License, Sort & Count) */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-800/80 pt-3 text-xs">
-        <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 border-t border-slate-800/80 pt-3 text-xs">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
           {/* Provider Select */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-500 font-medium">Provider:</span>
+          <div className="flex items-center gap-1.5 flex-1 sm:flex-initial min-w-[120px]">
+            <span className="text-slate-500 font-medium text-[11px] sm:text-xs">Provider:</span>
             <select
               value={selectedProvider}
               onChange={(e) => onSelectProvider(e.target.value)}
-              className="bg-slate-900 border border-slate-800 text-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400 transition-colors cursor-pointer"
+              className="w-full sm:w-auto max-w-[140px] xs:max-w-[160px] sm:max-w-none bg-slate-900 border border-slate-800 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400 transition-colors cursor-pointer truncate"
             >
               {PROVIDERS.map((p) => (
                 <option key={p.value} value={p.value}>
@@ -123,12 +123,12 @@ export const FilterRibbon: React.FC<FilterRibbonProps> = ({
           </div>
 
           {/* License Select */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-500 font-medium">License:</span>
+          <div className="flex items-center gap-1.5 flex-1 sm:flex-initial min-w-[120px]">
+            <span className="text-slate-500 font-medium text-[11px] sm:text-xs">License:</span>
             <select
               value={selectedLicense}
               onChange={(e) => onSelectLicense(e.target.value as LicenseType | 'ALL')}
-              className="bg-slate-900 border border-slate-800 text-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400 transition-colors cursor-pointer"
+              className="w-full sm:w-auto max-w-[140px] xs:max-w-[160px] sm:max-w-none bg-slate-900 border border-slate-800 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400 transition-colors cursor-pointer truncate"
             >
               {LICENSES.map((l) => (
                 <option key={l.value} value={l.value}>
@@ -139,12 +139,12 @@ export const FilterRibbon: React.FC<FilterRibbonProps> = ({
           </div>
 
           {/* Sort Select */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-500 font-medium">Sort:</span>
+          <div className="flex items-center gap-1.5 flex-1 sm:flex-initial min-w-[110px]">
+            <span className="text-slate-500 font-medium text-[11px] sm:text-xs">Sort:</span>
             <select
               value={selectedSort}
               onChange={(e) => onSelectSort(e.target.value as any)}
-              className="bg-slate-900 border border-slate-800 text-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400 transition-colors cursor-pointer"
+              className="w-full sm:w-auto bg-slate-900 border border-slate-800 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400 transition-colors cursor-pointer truncate"
             >
               <option value="relevance">Most Relevant</option>
               <option value="resolution">Highest Resolution</option>
@@ -155,7 +155,7 @@ export const FilterRibbon: React.FC<FilterRibbonProps> = ({
           {hasActiveFilters && (
             <button
               onClick={resetFilters}
-              className="text-lime-400 hover:text-lime-300 font-medium underline underline-offset-4 transition-colors cursor-pointer text-xs"
+              className="text-lime-400 hover:text-lime-300 font-medium underline underline-offset-4 transition-colors cursor-pointer text-xs py-1"
             >
               Reset Filters
             </button>
@@ -163,7 +163,7 @@ export const FilterRibbon: React.FC<FilterRibbonProps> = ({
         </div>
 
         {/* Live Metrics */}
-        <div className="flex items-center gap-2 text-slate-400 font-mono text-[11px] tabular-nums">
+        <div className="flex items-center gap-2 text-slate-400 font-mono text-[11px] tabular-nums mt-1 sm:mt-0">
           <span className="h-1.5 w-1.5 rounded-full bg-lime-400 animate-pulse"></span>
           <span>{totalCount} assets matched</span>
           {executionTimeMs !== undefined && (

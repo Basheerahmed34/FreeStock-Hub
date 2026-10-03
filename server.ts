@@ -1,8 +1,8 @@
-import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-import { apiRouter } from './src/server/routes/api.js';
+import express from 'express';
+import { app } from './src/server/app.js';
 
 dotenv.config();
 
@@ -10,13 +10,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function startServer() {
-  const app = express();
   const PORT = parseInt(process.env.PORT || '3000', 10);
-
-  app.use(express.json());
-
-  // Mount API endpoints
-  app.use('/api', apiRouter);
 
   // Vite development mode middleware or production static files
   if (process.env.NODE_ENV !== 'production') {

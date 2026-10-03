@@ -124,4 +124,9 @@ export interface CurationExportPayload {
     byProvider: Record<string, number>;
   };
   assets: UnifiedAsset[];
+  attributions?: {
+    markdown: string;
+    html: string;
+    plain: string;
+  };
 }

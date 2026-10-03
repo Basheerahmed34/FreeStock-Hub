@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DownloadRecord } from '../lib/firebase.js';
 import { downloadAssetDirectly } from '../lib/download-helper.js';
 import {
@@ -31,6 +31,16 @@ export const UserDownloadHistoryModal: React.FC<UserDownloadHistoryModalProps> =
 }) => {
   const [filterType, setFilterType] = useState<string>('ALL');
 
+  // Close on Escape key press
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const filtered = filterType === 'ALL'
@@ -62,29 +72,30 @@ export const UserDownloadHistoryModal: React.FC<UserDownloadHistoryModalProps> =
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-150">
-      <div className="relative w-full max-w-3xl rounded-3xl bg-slate-900 border border-slate-800 p-6 shadow-2xl space-y-6 max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-150">
+      <div className="relative w-full max-w-3xl rounded-2xl sm:rounded-3xl bg-slate-900 border border-slate-800 p-4 sm:p-6 shadow-2xl space-y-4 sm:space-y-6 max-h-[92vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-lime-400/10 border border-lime-400/20 text-lime-400">
-              <History className="h-6 w-6" />
+        <div className="flex items-center justify-between border-b border-slate-800 pb-3 sm:pb-4 flex-shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 mr-2">
+            <div className="p-2 sm:p-2.5 rounded-2xl bg-lime-400/10 border border-lime-400/20 text-lime-400 flex-shrink-0">
+              <History className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-white">Your Past Download History</h2>
-                <span className="font-mono text-xs px-2.5 py-0.5 rounded-full bg-lime-400/10 border border-lime-400/30 text-lime-400 font-bold">
-                  {totalCount} Total Downloads
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <h2 className="text-base sm:text-xl font-bold text-white truncate">Download History</h2>
+                <span className="font-mono text-[10px] sm:text-xs px-2 sm:px-2.5 py-0.5 rounded-full bg-lime-400/10 border border-lime-400/30 text-lime-400 font-bold">
+                  {totalCount} Total
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
-                Real-time Firebase synchronized log of all assets downloaded from open stock platforms
+              <p className="text-[11px] sm:text-xs text-slate-400 truncate">
+                Real-time Firebase synchronized log of downloaded assets
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer flex-shrink-0"
+            aria-label="Close download history"
           >
             <X className="h-5 w-5" />
           </button>

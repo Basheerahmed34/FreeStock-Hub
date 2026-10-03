@@ -210,13 +210,13 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
       </div>
 
       {/* 2. Main Title and High-Energy Gen Z Typing Animation */}
-      <div className="space-y-4 max-w-4xl pt-1">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-lime-400/10 border border-lime-400/20 text-lime-400 text-xs font-bold tracking-wide uppercase">
-          <Zap className="h-3.5 w-3.5" />
-          <span>Universal Open Stock Aggregator · Zero Redirects · Direct Local Downloads</span>
+      <div className="space-y-3 sm:space-y-4 max-w-4xl pt-1">
+        <div className="inline-flex flex-wrap items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full bg-lime-400/10 border border-lime-400/20 text-lime-400 text-[10px] sm:text-xs font-bold tracking-wide uppercase max-w-full">
+          <Zap className="h-3.5 w-3.5 flex-shrink-0" />
+          <span className="break-words">Universal Open Stock Aggregator · Direct Local Downloads</span>
         </div>
 
-        <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.12]">
+        <h1 className="font-display text-2xl xs:text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.14] sm:leading-[1.12] break-words">
           Universal creative media engine for{' '}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-lime-300 via-cyan-300 to-pink-400">
             free & open stock assets.

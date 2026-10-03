@@ -33,8 +33,18 @@ export const OperatorAdminPanelModal: React.FC<OperatorAdminPanelModalProps> = (
 }) => {
   const [trafficEvents, setTrafficEvents] = useState<TrafficEvent[]>([]);
   const [passcode, setPasscode] = useState('');
+  const [passcodeError, setPasscodeError] = useState('');
   const [isPasscodeUnlocked, setIsPasscodeUnlocked] = useState(false);
   const [activeTab, setActiveTab] = useState<'live_feed' | 'downloads' | 'analytics' | 'infrastructure'>('live_feed');
+
+  // Close on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   // Developer passcode bypass for direct developer testing
   const isAuthorized = isDeveloperAuthenticated || isPasscodeUnlocked || currentUserEmail?.toLowerCase() === 'mohsinjutt5855@gmail.com';
@@ -51,10 +61,11 @@ export const OperatorAdminPanelModal: React.FC<OperatorAdminPanelModalProps> = (
 
   const handlePasscodeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setPasscodeError('');
     if (passcode.trim() === 'dev-operator-2026' || passcode.trim() === 'developer') {
       setIsPasscodeUnlocked(true);
     } else {
-      alert('Invalid Developer Security Passcode.');
+      setPasscodeError('Invalid Developer Security Passcode.');
     }
   };
 
@@ -78,33 +89,34 @@ export const OperatorAdminPanelModal: React.FC<OperatorAdminPanelModalProps> = (
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-5xl rounded-3xl bg-slate-900 border border-slate-800 p-6 shadow-2xl flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-6 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-5xl rounded-2xl sm:rounded-3xl bg-slate-900 border border-slate-800 p-4 sm:p-6 shadow-2xl flex flex-col max-h-[92vh]">
         {/* Top Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
-              <Shield className="h-6 w-6" />
+        <div className="flex items-center justify-between border-b border-slate-800 pb-3 sm:pb-4 flex-shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 mr-2">
+            <div className="p-2 sm:p-2.5 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-400 flex-shrink-0">
+              <Shield className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-white tracking-tight">Operator Admin Panel</h2>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <h2 className="text-base sm:text-xl font-bold text-white tracking-tight">Operator Admin</h2>
                 <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold">
-                  Developer Restricted
+                  Restricted
                 </span>
-                <span className="flex items-center gap-1 text-[11px] text-lime-400 font-mono">
-                  <span className="h-2 w-2 rounded-full bg-lime-400 animate-pulse"></span>
-                  <span>LIVE FIREBASE REALTIME</span>
+                <span className="flex items-center gap-1 text-[10px] sm:text-[11px] text-lime-400 font-mono">
+                  <span className="h-1.5 w-1.5 rounded-full bg-lime-400 animate-pulse"></span>
+                  <span className="hidden xs:inline">LIVE FIREBASE</span>
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
-                System-level telemetry, live search traffic, and user download activity monitoring
+              <p className="text-[11px] sm:text-xs text-slate-400 truncate">
+                System telemetry & user download activity
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer flex-shrink-0"
+            aria-label="Close admin panel"
           >
             <X className="h-5 w-5" />
           </button>
@@ -112,16 +124,21 @@ export const OperatorAdminPanelModal: React.FC<OperatorAdminPanelModalProps> = (
 
         {/* Security Gate Check */}
         {!isAuthorized ? (
-          <div className="py-16 max-w-md mx-auto text-center space-y-5">
-            <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800 w-16 h-16 mx-auto flex items-center justify-center text-purple-400">
-              <Lock className="h-8 w-8" />
+          <div className="py-12 sm:py-16 max-w-md mx-auto text-center space-y-4 sm:space-y-5 px-2">
+            <div className="p-3 sm:p-4 rounded-3xl bg-slate-950 border border-slate-800 w-14 h-14 sm:w-16 sm:h-16 mx-auto flex items-center justify-center text-purple-400">
+              <Lock className="h-7 w-7 sm:h-8 sm:w-8" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-white">Developer Authentication Required</h3>
+              <h3 className="text-base sm:text-lg font-bold text-white">Developer Authentication Required</h3>
               <p className="text-xs text-slate-400">
                 This panel is restricted to verified developers (<strong>mohsinjutt5855@gmail.com</strong>) or authorized operator passcodes.
               </p>
             </div>
+            {passcodeError && (
+              <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/30 p-2 rounded-xl">
+                {passcodeError}
+              </p>
+            )}
             <form onSubmit={handlePasscodeSubmit} className="space-y-3 text-xs">
               <input
                 type="password"
@@ -132,7 +149,7 @@ export const OperatorAdminPanelModal: React.FC<OperatorAdminPanelModalProps> = (
               />
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold transition-colors cursor-pointer"
+                className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold transition-colors cursor-pointer min-h-[44px]"
               >
                 Unlock Operator Panel
               </button>
