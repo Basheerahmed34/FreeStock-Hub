@@ -59,9 +59,19 @@ export interface SearchOptions {
   sortBy?: 'relevance' | 'newest' | 'resolution';
 }
 
+export interface ProviderSearchResult {
+  assets: UnifiedAsset[];
+  totalAvailable: number | null; // Truthful total from API; null if not provided
+  status: 'SUCCESS' | 'ERROR' | 'DISABLED_NO_KEY';
+  httpStatus?: number;
+  error?: string;
+  responseTimeMs: number;
+}
+
 export interface BaseProviderAdapter {
   providerName: string;
   search(options: SearchOptions): Promise<UnifiedAsset[]>;
+  searchDetailed?(options: SearchOptions): Promise<ProviderSearchResult>;
   getAsset(id: string): Promise<UnifiedAsset | null>;
   getDownload(id: string): Promise<{ downloadUrl: string; requiresTracking: boolean }>;
   healthCheck(): Promise<boolean>;
@@ -77,6 +87,17 @@ export interface ProviderHealth {
   hasKeyConfigured: boolean;
 }
 
+export interface ProviderDebugInfo {
+  provider: string;
+  status: 'SUCCESS' | 'ERROR' | 'DISABLED_NO_KEY';
+  httpStatus?: number;
+  query: string;
+  resultsFetched: number;
+  totalAvailable: number | null; // null if not provided by API
+  responseTimeMs: number;
+  error?: string;
+}
+
 export interface SearchResponse {
   assets: UnifiedAsset[];
   totalResults: number;
@@ -87,7 +108,9 @@ export interface SearchResponse {
     count: number;
     error?: string;
   }>;
+  providersDebug: ProviderDebugInfo[];
   executionTimeMs: number;
+  cached?: boolean;
 }
 
 export interface CurationExportPayload {
@@ -99,20 +122,6 @@ export interface CurationExportPayload {
     totalAssets: number;
     byType: Record<string, number>;
     byProvider: Record<string, number>;
-    byLicense: Record<string, number>;
   };
-  assets: UnifiedAsset[];
-  attributions: {
-    markdown: string;
-    html: string;
-    plain: string;
-  };
-}
-
-export interface SharedCollectionResponse {
-  shareId: string;
-  title: string;
-  description?: string;
-  createdAt: string;
   assets: UnifiedAsset[];
 }

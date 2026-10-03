@@ -1,15 +1,23 @@
-import { AssetType, BaseProviderAdapter, LicenseType, SearchOptions, UnifiedAsset } from '../../types/unified-asset.js';
+import {
+  AssetType,
+  BaseProviderAdapter,
+  LicenseType,
+  ProviderSearchResult,
+  SearchOptions,
+  UnifiedAsset
+} from '../../types/unified-asset.js';
 
 export class IconifyAdapter implements BaseProviderAdapter {
   providerName = 'iconify';
 
-  async search(options: SearchOptions): Promise<UnifiedAsset[]> {
+  async searchDetailed(options: SearchOptions): Promise<ProviderSearchResult> {
+    const t0 = Date.now();
     const query = options.query || 'arrow';
-    const limit = Math.min(options.perPage || 24, 48);
+    const limit = Math.min(options.perPage || 30, 48);
     const endpoint = `https://api.iconify.design/search?query=${encodeURIComponent(query)}&limit=${limit}`;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
+    const timeout = setTimeout(() => controller.abort(), 5000);
 
     try {
       const res = await fetch(endpoint, {
@@ -20,11 +28,23 @@ export class IconifyAdapter implements BaseProviderAdapter {
         signal: controller.signal
       });
       clearTimeout(timeout);
+      const elapsed = Date.now() - t0;
 
-      if (!res.ok) throw new Error(`Iconify API error: ${res.status}`);
+      if (!res.ok) {
+        return {
+          assets: [],
+          totalAvailable: null,
+          status: 'ERROR',
+          httpStatus: res.status,
+          error: `Iconify HTTP ${res.status}`,
+          responseTimeMs: elapsed
+        };
+      }
+
       const data = await res.json();
       const icons: string[] = data.icons || [];
       const collections = data.collections || {};
+      const totalAvailable = typeof data.total === 'number' ? data.total : null;
 
       const assets: UnifiedAsset[] = icons.map((iconKey: string) => {
         const [prefix, name] = iconKey.split(':');
@@ -64,16 +84,33 @@ export class IconifyAdapter implements BaseProviderAdapter {
           license_name: licenseType,
           license_url: coll.license?.url || 'https://opensource.org/licenses/MIT',
           attribution_required: attributionRequired,
-          attribution_text: `"${name}" icon by ${author} (${license}).`,
+          attribution_text: `Icon "${name}" from ${coll.name || prefix} collection.`,
           cached_at: new Date()
         };
       });
 
-      return assets.length > 0 ? assets : this.getFallbackAssets(options);
-    } catch {
+      return {
+        assets,
+        totalAvailable,
+        status: 'SUCCESS',
+        httpStatus: 200,
+        responseTimeMs: elapsed
+      };
+    } catch (err: any) {
       clearTimeout(timeout);
-      return this.getFallbackAssets(options);
+      return {
+        assets: [],
+        totalAvailable: null,
+        status: 'ERROR',
+        error: err?.message || 'Iconify search failed',
+        responseTimeMs: Date.now() - t0
+      };
     }
+  }
+
+  async search(options: SearchOptions): Promise<UnifiedAsset[]> {
+    const detailed = await this.searchDetailed(options);
+    return detailed.assets;
   }
 
   async getAsset(id: string): Promise<UnifiedAsset | null> {
@@ -120,32 +157,5 @@ export class IconifyAdapter implements BaseProviderAdapter {
     } catch {
       return false;
     }
-  }
-
-  private getFallbackAssets(options: SearchOptions): UnifiedAsset[] {
-    const q = options.query || 'icon';
-    const fallbackIcons = ['sparkles', 'compass', 'code', 'camera', 'music', 'layers'];
-    return fallbackIcons.map((name, i) => ({
-      asset_id: `iconify-lucide-${name}`,
-      provider: 'iconify',
-      provider_asset_id: `lucide:${name}`,
-      asset_type: AssetType.ICON,
-      title: `${name} vector icon (${q})`,
-      description: `Lucide open-source clean SVG outline icon for ${name}.`,
-      thumbnail_url: `https://api.iconify.design/lucide/${name}.svg?color=%2338bdf8`,
-      preview_url: `https://api.iconify.design/lucide/${name}.svg?color=%2338bdf8`,
-      download_url: `https://api.iconify.design/lucide/${name}.svg`,
-      source_url: `https://icon-sets.iconify.design/lucide/${name}/`,
-      author_name: 'Lucide Icons Community',
-      author_url: 'https://lucide.dev',
-      width: 512,
-      height: 512,
-      file_type: 'svg',
-      license_name: 'ISC / Open Source',
-      license_url: 'https://opensource.org/licenses/ISC',
-      attribution_required: false,
-      attribution_text: `"${name}" icon by Lucide Icons project.`,
-      cached_at: new Date()
-    }));
   }
 }
